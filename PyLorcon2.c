@@ -1,7 +1,7 @@
 /*
- *  PyLorcon2 - Python bindings for Lorcon2 library
- *  Author: 6e726d <6e726d@gmail.com>
- *
+ * PyLorcon2 - Python bindings for Lorcon2 library
+ * Author: 6e726d <6e726d@gmail.com>
+ * Author: gutes  <egutesman@coresecurity.com>
  */
 
 #include <Python.h>
@@ -220,6 +220,65 @@ static PyObject* PyLorcon2_Context_send_bytes(PyLorcon2_Context *self, PyObject 
   return Py_None;
 }
 
+static PyObject* PyLorcon2_Context_set_timeout(PyLorcon2_Context *self, PyObject *args, PyObject *kwds)
+{
+  static char *kwlist[] = {"timeout", NULL};
+  int timeout;
+
+  if(!PyArg_ParseTupleAndKeywords(args, kwds, "i", kwlist, &timeout))
+    return NULL;
+
+  lorcon_set_timeout(self->context, timeout);
+
+  return Py_None;
+}
+
+static PyObject* PyLorcon2_Context_get_timeout(PyLorcon2_Context *self)
+{
+  return Py_BuildValue("i", lorcon_get_timeout(self->context));
+}
+
+static PyObject* PyLorcon2_Context_set_vap(PyLorcon2_Context *self, PyObject *args, PyObject *kwds)
+{
+  static char *kwlist[] = {"vap", NULL};
+  char *vap;
+
+  if(!PyArg_ParseTupleAndKeywords(args, kwds, "z#", kwlist, &vap))
+    return NULL;
+
+  lorcon_set_vap(self->context, vap); 
+
+  return Py_None;
+}
+
+static PyObject* PyLorcon2_Context_get_vap(PyLorcon2_Context *self)
+{
+   return PyString_FromString(lorcon_get_vap(self->context));
+}
+
+static PyObject* PyLorcon2_Context_get_driver_name(PyLorcon2_Context *self)
+{
+   return PyString_FromString(lorcon_get_driver_name(self->context));
+}
+
+static PyObject* PyLorcon2_Context_set_channel(PyLorcon2_Context *self, PyObject *args, PyObject *kwds)
+{
+  int channel;
+
+  if(!PyArg_ParseTuple(args, "i", &channel))
+    return NULL;
+
+  lorcon_set_channel(self->context, channel);
+
+  return Py_None;
+
+}
+
+static PyObject* PyLorcon2_Context_get_channel(PyLorcon2_Context *self)
+{
+  return Py_BuildValue("i", lorcon_get_channel(self->context));
+}
+
 static PyMethodDef PyLorcon2_Context_Methods[] =
 {
   {"open_inject",   (PyCFunction)PyLorcon2_Context_open_inject,   METH_VARARGS, "TODO: Get Lorcon2 version."},
@@ -228,6 +287,13 @@ static PyMethodDef PyLorcon2_Context_Methods[] =
   {"get_error",     (PyCFunction)PyLorcon2_Context_get_error,     METH_VARARGS, "TODO: Get Lorcon2 version."},
   {"get_capiface",  (PyCFunction)PyLorcon2_Context_get_capiface,  METH_VARARGS, "TODO: Get Lorcon2 version."},
   {"send_bytes",    (PyCFunction)PyLorcon2_Context_send_bytes,    METH_VARARGS, "TODO: Get Lorcon2 version."},
+  {"set_timeout",   (PyCFunction)PyLorcon2_Context_set_timeout,   METH_VARARGS, "TODO: Get Lorcon2 version."},
+  {"get_timeout",   (PyCFunction)PyLorcon2_Context_get_timeout,   METH_VARARGS, "TODO: Get Lorcon2 version."},
+  {"set_vap",       (PyCFunction)PyLorcon2_Context_set_vap,       METH_VARARGS, "TODO: Get Lorcon2 version."},
+  {"get_vap",       (PyCFunction)PyLorcon2_Context_get_vap,       METH_VARARGS, "TODO: Get Lorcon2 version."},
+  {"get_driver_name", (PyCFunction)PyLorcon2_Context_get_driver_name,       METH_VARARGS, "TODO: Get Lorcon2 version."},
+  {"set_channel",   (PyCFunction)PyLorcon2_Context_set_channel,   METH_VARARGS, "TODO: Get Lorcon2 version."},
+  {"get_channel",   (PyCFunction)PyLorcon2_Context_get_channel,   METH_VARARGS, "TODO: Get Lorcon2 version."},
   {NULL, NULL, 0, NULL}
 };
 

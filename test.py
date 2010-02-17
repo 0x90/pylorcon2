@@ -23,8 +23,41 @@ def testModuleMethods(iface, driver):
 def simpleInjectionTest(iface, data):
   "Simple Lorcon2 Injection Test."
   c = PyLorcon2.Context(iface)
-  c.open_inject()
+  c.open_injmon()
   c.send_bytes(data)
+
+
+def simpleTimeoutTest(iface, timeout):
+  "Simple Set Timeout test"
+  c = PyLorcon2.Context(iface)
+  c.set_timeout(timeout) 
+  t = c.get_timeout()
+
+  return (t == timeout)
+
+def simpleVapTest(iface, vap):
+  "Simple vap test"
+  c = PyLorcon2.Context(iface)
+  c.set_vap(vap) 
+  v = c.get_vap()
+  
+  return (v == vap)
+
+def simpleGetDriverNameTest(iface):
+  "Test Driver name"
+  c = PyLorcon2.Context(iface)
+  drv = c.get_driver_name()
+  return drv
+
+def simpleSetChannelTest(iface, channel):
+  "Set Channel Test"
+  c = PyLorcon2.Context(iface)
+  c.open_monitor()  
+  c.set_channel(1)
+  chan = c. get_channel()
+
+  return (chan == channel)
+
 
 if __name__ == "__main__":
   if len(sys.argv) != 2:
@@ -37,6 +70,7 @@ if __name__ == "__main__":
   driver = "mac80211" # only testing mac80211 driver for now
 
   # Test Module Methods
+  print "\n== Module Tests =="
   testModuleMethods(iface, driver)
 
   # data is a beacon packet with bssid == 00:21:21:21:21:21
@@ -45,5 +79,25 @@ if __name__ == "__main__":
          "\xf4\x38\x23\x00\x00\x00\x64\x00\x11\x04\x00\x04XXXX" \
          "\x01\x08\x82\x84\x8b\x96\x24\x30\x48\x6c\x03\x01\x01" \
          "\x32\x04\x0c\x12\x18\x60"
+
+  print "\n== Lorcon Context Tests =="
+  
+  
   simpleInjectionTest(iface, data)
+  print " * Injection Test PASSED (sniff to check!)"
+
+  if simpleTimeoutTest(iface, 123):
+    print " * Timeout Test OK"
+  
+  if simpleVapTest(iface, "wlan0" ): 
+    print " * Vap Test OK"
+  
+  driver = simpleGetDriverNameTest(iface)
+  print " * Get Driver Name Test: %s" % driver
+
+  if not simpleSetChannelTest(iface, 1):
+    print " * Set Shannel Test FAILED"
+  else:
+    print " * Set Shannel Test OK"
+
 
