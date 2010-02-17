@@ -1,25 +1,26 @@
-//
-// PyLorcon2 - Python bindings for Lorcon2 library
-// Author: 6e726d <6e726d@gmail.com>
-//
+/*
+ *  PyLorcon2 - Python bindings for Lorcon2 library
+ *  Author: 6e726d <6e726d@gmail.com>
+ *
+ */
 
 #include <Python.h>
 #include <lorcon2/lorcon.h>
 
-static PyObject *Lorcon2Exception; // Custom Lorcon2 Exception
+static PyObject *Lorcon2Exception;
 
 typedef struct {
   PyObject_HEAD
   struct lorcon *context;
 } PyLorcon2_Context;
 
-//-------------------------------------------------------------------------------------
-// PyLorcon2 Module Functions
-//  - lorcon_get_version
-//  - lorcon_list_drivers
-//  - lorcon_find_driver
-//  - lorcon_auto_driver
-//-------------------------------------------------------------------------------------
+/*
+ *  PyLorcon2 Module Functions
+ *   - lorcon_get_version
+ *   - lorcon_list_drivers
+ *   - lorcon_find_driver
+ *   - lorcon_auto_driver
+ */
 
 static PyObject* PyLorcon2_get_version(PyObject *self, PyObject *args)
 {
@@ -121,9 +122,9 @@ static PyMethodDef PyLorcon2Methods[] =
   {NULL, NULL, 0, NULL}
 };
 
-//-------------------------------------------------------------------------------------
-// PyLorcon2 Context Object
-//-------------------------------------------------------------------------------------
+/*
+ *  PyLorcon2 Context Object
+ */
 
 static void PyLorcon2_Context_dealloc(PyLorcon2_Context *self)
 {
@@ -271,8 +272,6 @@ static PyTypeObject PyLorcon2_ContextType = {
   0,                                        /* tp_alloc */
   PyLorcon2_Context_new                     /* tp_new */
 };
-
-//-------------------------------------------------------------------------------------
 
 PyMODINIT_FUNC initPyLorcon2(void)
 {
