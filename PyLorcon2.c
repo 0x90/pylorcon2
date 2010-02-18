@@ -243,6 +243,7 @@ static PyObject* PyLorcon2_Context_get_capiface(PyLorcon2_Context *self)
 static PyObject* PyLorcon2_Context_send_bytes(PyLorcon2_Context *self, PyObject *args, PyObject *kwds)
 {
   int len;
+  int sent;
   unsigned char *packet;
 
   if(!PyArg_ParseTuple(args, "s#", &packet, &len))
@@ -251,14 +252,14 @@ static PyObject* PyLorcon2_Context_send_bytes(PyLorcon2_Context *self, PyObject 
     return NULL;
   }
 
-  if(lorcon_send_bytes(self->context, len, packet) < 0)
+  sent = lorcon_send_bytes(self->context, len, packet);
+  if(sent < 0)
   {
     PyErr_SetString(Lorcon2Exception, "Unable to send packet.");
     return NULL;
   }
 
-  Py_INCREF(Py_None);
-  return Py_None;
+  return Py_BuildValue("i", sent);
 }
 
 static PyObject* PyLorcon2_Context_set_timeout(PyLorcon2_Context *self, PyObject *args, PyObject *kwds)
