@@ -52,12 +52,28 @@ def simpleGetDriverNameTest(iface):
 def simpleSetChannelTest(iface, channel):
   "Set Channel Test"
   c = PyLorcon2.Context(iface)
+  c.open_injmon()  
+  try:
+    c.set_channel(1)
+    chan = c. get_channel()
+    return (chan == channel)
+  except PyLorcon2.Lorcon2Exception as e:
+    print  e
+
+
+def simpleGetMacTest(iface):
+  c = PyLorcon2.Context(iface)
+  c.open_injmon()  
+  mac = c.get_hwmac()
+  return  mac
+
+def simpleSetMacTest(iface, mac):
+  c = PyLorcon2.Context(iface)
   c.open_monitor()  
-  c.set_channel(1)
-  chan = c. get_channel()
-
-  return (chan == channel)
-
+  try:
+    c.set_hwmac(mac)
+  except PyLorcon2.Lorcon2Exception as e:
+    print e 
 
 if __name__ == "__main__":
   if len(sys.argv) != 2:
@@ -82,7 +98,7 @@ if __name__ == "__main__":
 
   print "\n== Lorcon Context Tests =="
   
-  
+ 
   simpleInjectionTest(iface, data)
   print " * Injection Test PASSED (sniff to check!)"
 
@@ -99,5 +115,7 @@ if __name__ == "__main__":
     print " * Set Shannel Test FAILED"
   else:
     print " * Set Shannel Test OK"
-
-
+  
+  print " * Get MAC: ", simpleGetMacTest(iface), " - ", ':'.join([ '%.2x' %n for n in simpleGetMacTest(iface)])
+ 
+  print " * Set MAC: ", simpleSetMacTest(iface, [0, 2, 114, 105, 40, 255])

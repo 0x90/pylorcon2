@@ -7,6 +7,18 @@
 #include <Python.h>
 #include <lorcon2/lorcon.h>
 
+#define PASS_LORCON_EXCEPTION(call_return_value) {\
+  if (call_return_value == LORCON_ENOTSUPP || call_return_value == LORCON_EGENERIC){\
+    PyErr_SetString(Lorcon2Exception, lorcon_get_error(self->context));\
+    return NULL;}\
+}
+
+#define CHECK_AND_RAISE_EXCEPTION(condition, text, return_value) {\
+  if ((condition)){\
+    PyErr_SetString(Lorcon2Exception, (text));\
+    return return_value;}\
+}
+
 static PyObject *Lorcon2Exception;
 
 typedef struct {
@@ -26,21 +38,13 @@ static PyObject* PyLorcon2_list_drivers(PyObject *self, PyObject *args)
 
   driver = driver_list = lorcon_list_drivers();
 
-  if(driver == NULL)
-  {
-    PyErr_SetString(Lorcon2Exception, "Unable to list drivers.");
-    return NULL;
-  }
+  CHECK_AND_RAISE_EXCEPTION(driver == NULL, "Unable to list drivers", NULL);
 
   while(driver)
   {
     PyObject* tuple = PyTuple_New(2);
 
-    if(tuple == NULL)
-    {
-      PyErr_SetString(Lorcon2Exception, "Unable to create python tuple.");
-      return NULL;
-    }
+    CHECK_AND_RAISE_EXCEPTION(tuple == NULL, "Unable to create python tuple", NULL);
 
     PyTuple_SetItem(tuple, 0, PyString_FromString(driver->name));
     PyTuple_SetItem(tuple, 1, PyString_FromString(driver->details));
@@ -63,27 +67,15 @@ static PyObject* PyLorcon2_find_driver(PyObject *self, PyObject *args)
   PyObject* tuple = NULL;
   lorcon_driver_t *driver;
 
-  if(!PyArg_ParseTuple(args, "s", &name))
-  {
-    PyErr_SetString(Lorcon2Exception, "Unable to parse arguments.");
-    return NULL;
-  }
+  CHECK_AND_RAISE_EXCEPTION(!PyArg_ParseTuple(args, "s", &name), "Unable to parse argunments.", NULL);
 
   driver = lorcon_find_driver(name);
 
-  if(driver == NULL)
-  {
-    PyErr_SetString(Lorcon2Exception, "Unable to find driver.");
-    return NULL;
-  }
+  CHECK_AND_RAISE_EXCEPTION(driver == NULL, "Unable to find driver", NULL);
 
   tuple = PyTuple_New(2);
 
-  if(tuple == NULL)
-  {
-    PyErr_SetString(Lorcon2Exception, "Unable to create python tuple.");
-    return NULL;
-  }
+  CHECK_AND_RAISE_EXCEPTION(tuple == NULL, "Unable to create python tuple.", NULL);
 
   PyTuple_SetItem(tuple, 0, PyString_FromString(driver->name));
   PyTuple_SetItem(tuple, 1, PyString_FromString(driver->details));
@@ -99,27 +91,15 @@ static PyObject* PyLorcon2_auto_driver(PyObject *self, PyObject *args)
   PyObject* tuple = NULL;
   lorcon_driver_t *driver;
 
-  if(!PyArg_ParseTuple(args, "s", &iface))
-  {
-    PyErr_SetString(Lorcon2Exception, "Unable to parse arguments.");
-    return NULL;
-  }
+  CHECK_AND_RAISE_EXCEPTION(!PyArg_ParseTuple(args, "s", &iface), "Unable to parse argunments.", NULL);
 
   driver = lorcon_auto_driver(iface);
 
-  if(driver == NULL)
-  {
-    PyErr_SetString(Lorcon2Exception, "Unable to get driver with auto_driver.");
-    return NULL;
-  }
+  CHECK_AND_RAISE_EXCEPTION(driver == NULL, "Unable to get driver with auto_driver.", NULL);
 
   tuple = PyTuple_New(2);
 
-  if(tuple == NULL)
-  {
-    PyErr_SetString(Lorcon2Exception, "Unable to create python tuple.");
-    return NULL;
-  }
+  CHECK_AND_RAISE_EXCEPTION(tuple == NULL, "Unable to create python tuple.", NULL);
 
   PyTuple_SetItem(tuple, 0, PyString_FromString(driver->name));
   PyTuple_SetItem(tuple, 1, PyString_FromString(driver->details));
@@ -165,42 +145,26 @@ static int PyLorcon2_Context_init(PyLorcon2_Context *self, PyObject *args, PyObj
 
   static char *kwlist[] = {"iface", NULL};
 
-  if(!PyArg_ParseTupleAndKeywords(args, kwds, "S", kwlist, &iface))
-  {
-    PyErr_SetString(Lorcon2Exception, "Unable to parse arguments.");
-    return -1;
-  }
+  CHECK_AND_RAISE_EXCEPTION(!PyArg_ParseTupleAndKeywords(args, kwds, "S", kwlist, &iface), "Unable to parse argunments.", -1);
 
   driver = lorcon_auto_driver(PyString_AsString(iface));
 
-  if(driver == NULL)
-  {
-    PyErr_SetString(Lorcon2Exception, "Unable to get driver with auto_driver.");
-    return -1;
-  }
+  CHECK_AND_RAISE_EXCEPTION(driver == NULL, "Unable to get driver with auto_driver.", -1);
 
   self->context = lorcon_create(PyString_AsString(iface), driver);
-
   lorcon_set_timeout(self->context, 100);
-
   lorcon_free_driver_list(driver);
 
-  if(self->context == NULL)
-  {
-    PyErr_SetString(Lorcon2Exception, "Unable to create lorcon context.");
-    return -1;
-  }
+  CHECK_AND_RAISE_EXCEPTION(self->context == NULL, "Unable to create lorcon context.", -1);
 
   return 0;
 }
 
 static PyObject* PyLorcon2_Context_open_inject(PyLorcon2_Context *self)
 {
-  if(lorcon_open_inject(self->context) < 0)
-  {
-    PyErr_SetString(Lorcon2Exception, "Unable to set context to inject mode.");
-    return NULL;
-  }
+  int r;
+  r = lorcon_open_inject(self->context);
+  PASS_LORCON_EXCEPTION(r); 
 
   Py_INCREF(Py_None);
   return Py_None;
@@ -208,11 +172,11 @@ static PyObject* PyLorcon2_Context_open_inject(PyLorcon2_Context *self)
 
 static PyObject* PyLorcon2_Context_open_monitor(PyLorcon2_Context *self)
 {
-  if(lorcon_open_monitor(self->context) < 0)
-  {
-    PyErr_SetString(Lorcon2Exception, "Unable to set context to monitor mode.");
-    return NULL;
-  }
+  int r;
+  
+  r = lorcon_open_monitor(self->context);
+
+  PASS_LORCON_EXCEPTION(r); 
 
   Py_INCREF(Py_None);
   return Py_None;
@@ -220,15 +184,24 @@ static PyObject* PyLorcon2_Context_open_monitor(PyLorcon2_Context *self)
 
 static PyObject* PyLorcon2_Context_open_injmon(PyLorcon2_Context *self)
 {
-  if(lorcon_open_injmon(self->context) < 0)
-  {
-    PyErr_SetString(Lorcon2Exception, "Unable to set context to monitor and inject mode.");
-    return NULL;
-  }
+  int r;
+  
+  r = lorcon_open_injmon(self->context);
+
+  PASS_LORCON_EXCEPTION(r); 
 
   Py_INCREF(Py_None);
   return Py_None;
 }
+
+static PyObject* PyLorcon2_Context_close(PyLorcon2_Context *self)
+{
+  lorcon_close(self->context);
+  printf("calling close");
+  Py_INCREF(Py_None);
+  return Py_None;
+}
+
 
 static PyObject* PyLorcon2_Context_get_error(PyLorcon2_Context *self)
 {
@@ -243,23 +216,15 @@ static PyObject* PyLorcon2_Context_get_capiface(PyLorcon2_Context *self)
 static PyObject* PyLorcon2_Context_send_bytes(PyLorcon2_Context *self, PyObject *args, PyObject *kwds)
 {
   int len;
-  int sent;
+  int r;
   unsigned char *packet;
 
-  if(!PyArg_ParseTuple(args, "s#", &packet, &len))
-  {
-    PyErr_SetString(Lorcon2Exception, "Unable to parse arguments.");
-    return NULL;
-  }
+  CHECK_AND_RAISE_EXCEPTION(!PyArg_ParseTuple(args, "s#", &packet, &len), "Unable to parse argunments.", NULL);
+  
+  r = lorcon_send_bytes(self->context, len, packet);
+  PASS_LORCON_EXCEPTION(r); 
 
-  sent = lorcon_send_bytes(self->context, len, packet);
-  if(sent < 0)
-  {
-    PyErr_SetString(Lorcon2Exception, "Unable to send packet.");
-    return NULL;
-  }
-
-  return Py_BuildValue("i", sent);
+  return Py_BuildValue("i", r);
 }
 
 static PyObject* PyLorcon2_Context_set_timeout(PyLorcon2_Context *self, PyObject *args, PyObject *kwds)
@@ -267,11 +232,7 @@ static PyObject* PyLorcon2_Context_set_timeout(PyLorcon2_Context *self, PyObject
   int timeout;
   static char *kwlist[] = {"timeout", NULL};
 
-  if(!PyArg_ParseTupleAndKeywords(args, kwds, "i", kwlist, &timeout))
-  {
-    PyErr_SetString(Lorcon2Exception, "Unable to parse arguments.");
-    return NULL;
-  }
+  CHECK_AND_RAISE_EXCEPTION(!PyArg_ParseTupleAndKeywords(args, kwds, "i", kwlist, &timeout), "Unable to parse argunments.", NULL);
 
   lorcon_set_timeout(self->context, timeout);
 
@@ -289,11 +250,7 @@ static PyObject* PyLorcon2_Context_set_vap(PyLorcon2_Context *self, PyObject *ar
   char *vap;
   static char *kwlist[] = {"vap", NULL};
 
-  if(!PyArg_ParseTupleAndKeywords(args, kwds, "z#", kwlist, &vap))
-  {
-    PyErr_SetString(Lorcon2Exception, "Unable to parse arguments.");
-    return NULL;
-  }
+  CHECK_AND_RAISE_EXCEPTION(!PyArg_ParseTupleAndKeywords(args, kwds, "z#", kwlist, &vap), "Unable to parse argunments.", NULL);
 
   lorcon_set_vap(self->context, vap); 
 
@@ -314,22 +271,66 @@ static PyObject* PyLorcon2_Context_get_driver_name(PyLorcon2_Context *self)
 static PyObject* PyLorcon2_Context_set_channel(PyLorcon2_Context *self, PyObject *args, PyObject *kwds)
 {
   int channel;
+  int r;
 
-  if(!PyArg_ParseTuple(args, "i", &channel))
-  {
-    PyErr_SetString(Lorcon2Exception, "Unable to parse arguments.");
-    return NULL;
-  }
+  CHECK_AND_RAISE_EXCEPTION(!PyArg_ParseTuple(args, "i", &channel), "Unable to parse arguments", NULL);
 
-  lorcon_set_channel(self->context, channel);
-
+  r = lorcon_set_channel(self->context, channel);
+  PASS_LORCON_EXCEPTION(r); 
+    
   Py_INCREF(Py_None);
   return Py_None;
 }
 
 static PyObject* PyLorcon2_Context_get_channel(PyLorcon2_Context *self)
 {
-  return Py_BuildValue("i", lorcon_get_channel(self->context));
+  int r;
+
+  r = lorcon_get_channel(self->context);
+  PASS_LORCON_EXCEPTION(r); 
+  
+  return Py_BuildValue("i", r);
+}
+
+
+static PyObject* PyLorcon2_Context_get_hwmac(PyLorcon2_Context *self)
+{
+    int r;
+    uint8_t *mac;
+    PyObject *ret;
+
+    r = lorcon_get_hwmac(self->context, &mac);
+    PASS_LORCON_EXCEPTION(r);
+
+    ret = Py_BuildValue("[i,i,i,i,i,i]", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+    free(mac);
+
+    return ret;
+}
+
+static PyObject* PyLorcon2_Context_set_hwmac(PyLorcon2_Context *self, PyObject *args, PyObject *kwds)
+{
+  PyObject *mac_list;
+  Py_ssize_t list_size;
+  uint8_t *mac;
+  int r, i;
+
+  CHECK_AND_RAISE_EXCEPTION(!PyArg_ParseTuple(args, "O", &mac_list), "Unable to parse arguments", NULL);
+  CHECK_AND_RAISE_EXCEPTION(!PyList_Check(mac_list), "Argument must be of type List.", NULL);
+
+  list_size = PyList_Size(mac_list);
+
+  CHECK_AND_RAISE_EXCEPTION((list_size != 6), "MAC must be a list composed by 6 bytes.", NULL);
+
+  mac = malloc(sizeof(uint8_t) * 6);
+  for (i=0; i<6; i++)
+    mac[i] = (uint8_t) PyInt_AsLong(PyList_GetItem(mac_list, i));
+
+  r = lorcon_set_hwmac(self->context, 6, mac);
+  PASS_LORCON_EXCEPTION(r);
+  
+  return Py_BuildValue("i", r);
+
 }
 
 static PyMethodDef PyLorcon2_Context_Methods[] =
@@ -337,6 +338,7 @@ static PyMethodDef PyLorcon2_Context_Methods[] =
   {"open_inject",     (PyCFunction)PyLorcon2_Context_open_inject,     METH_VARARGS, "Set context to injection mode."},
   {"open_monitor",    (PyCFunction)PyLorcon2_Context_open_monitor,    METH_VARARGS, "Set context to monitor mode."},
   {"open_injmon",     (PyCFunction)PyLorcon2_Context_open_injmon,     METH_VARARGS, "Set context to monitor and injection mode."},
+  {"close",           (PyCFunction)PyLorcon2_Context_close,           METH_VARARGS, "Close context."},
   {"get_error",       (PyCFunction)PyLorcon2_Context_get_error,       METH_VARARGS, "Returns context error."},
   {"get_capiface",    (PyCFunction)PyLorcon2_Context_get_capiface,    METH_VARARGS, "Returns context interface."},
   {"send_bytes",      (PyCFunction)PyLorcon2_Context_send_bytes,      METH_VARARGS, "Send bytes."},
@@ -347,6 +349,8 @@ static PyMethodDef PyLorcon2_Context_Methods[] =
   {"get_driver_name", (PyCFunction)PyLorcon2_Context_get_driver_name, METH_VARARGS, "Returns context driver name."},
   {"set_channel",     (PyCFunction)PyLorcon2_Context_set_channel,     METH_VARARGS, "Set context channel."},
   {"get_channel",     (PyCFunction)PyLorcon2_Context_get_channel,     METH_VARARGS, "Returns context channel."},
+  {"set_hwmac",       (PyCFunction)PyLorcon2_Context_set_hwmac,       METH_VARARGS, "Set context hardware mac."},
+  {"get_hwmac",       (PyCFunction)PyLorcon2_Context_get_hwmac,       METH_VARARGS, "Returns context hardware mac."},
   {NULL, NULL, 0, NULL}
 };
 
