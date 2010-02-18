@@ -14,14 +14,6 @@ typedef struct {
   struct lorcon *context;
 } PyLorcon2_Context;
 
-/*
- *  PyLorcon2 Module Functions
- *   - lorcon_get_version
- *   - lorcon_list_drivers
- *   - lorcon_find_driver
- *   - lorcon_auto_driver
- */
-
 static PyObject* PyLorcon2_get_version(PyObject *self, PyObject *args)
 {
   return Py_BuildValue("i", lorcon_get_version());
@@ -35,14 +27,20 @@ static PyObject* PyLorcon2_list_drivers(PyObject *self, PyObject *args)
   driver = driver_list = lorcon_list_drivers();
 
   if(driver == NULL)
+  {
+    PyErr_SetString(Lorcon2Exception, "Unable to list drivers.");
     return NULL;
+  }
 
   while(driver)
   {
     PyObject* tuple = PyTuple_New(2);
 
     if(tuple == NULL)
+    {
+      PyErr_SetString(Lorcon2Exception, "Unable to create python tuple.");
       return NULL;
+    }
 
     PyTuple_SetItem(tuple, 0, PyString_FromString(driver->name));
     PyTuple_SetItem(tuple, 1, PyString_FromString(driver->details));
@@ -66,17 +64,26 @@ static PyObject* PyLorcon2_find_driver(PyObject *self, PyObject *args)
   lorcon_driver_t *driver;
 
   if(!PyArg_ParseTuple(args, "s", &name))
+  {
+    PyErr_SetString(Lorcon2Exception, "Unable to parse arguments.");
     return NULL;
+  }
 
   driver = lorcon_find_driver(name);
 
   if(driver == NULL)
-    return Py_None;
+  {
+    PyErr_SetString(Lorcon2Exception, "Unable to find driver.");
+    return NULL;
+  }
 
   tuple = PyTuple_New(2);
 
   if(tuple == NULL)
+  {
+    PyErr_SetString(Lorcon2Exception, "Unable to create python tuple.");
     return NULL;
+  }
 
   PyTuple_SetItem(tuple, 0, PyString_FromString(driver->name));
   PyTuple_SetItem(tuple, 1, PyString_FromString(driver->details));
@@ -93,17 +100,26 @@ static PyObject* PyLorcon2_auto_driver(PyObject *self, PyObject *args)
   lorcon_driver_t *driver;
 
   if(!PyArg_ParseTuple(args, "s", &iface))
+  {
+    PyErr_SetString(Lorcon2Exception, "Unable to parse arguments.");
     return NULL;
+  }
 
   driver = lorcon_auto_driver(iface);
 
   if(driver == NULL)
-    return Py_None;
+  {
+    PyErr_SetString(Lorcon2Exception, "Unable to get driver with auto_driver.");
+    return NULL;
+  }
 
   tuple = PyTuple_New(2);
 
   if(tuple == NULL)
+  {
+    PyErr_SetString(Lorcon2Exception, "Unable to create python tuple.");
     return NULL;
+  }
 
   PyTuple_SetItem(tuple, 0, PyString_FromString(driver->name));
   PyTuple_SetItem(tuple, 1, PyString_FromString(driver->details));
@@ -115,10 +131,10 @@ static PyObject* PyLorcon2_auto_driver(PyObject *self, PyObject *args)
 
 static PyMethodDef PyLorcon2Methods[] =
 {
-  {"get_version",  PyLorcon2_get_version,  METH_VARARGS, "TODO: Get Lorcon2 version."},
-  {"list_drivers", PyLorcon2_list_drivers, METH_VARARGS, "TODO: Get Lorcon2 version."},
-  {"find_driver",  PyLorcon2_find_driver,  METH_VARARGS, "TODO: Get Lorcon2 version."},
-  {"auto_driver",  PyLorcon2_auto_driver,  METH_VARARGS, "TODO: Get Lorcon2 version."},
+  {"get_version",  PyLorcon2_get_version,  METH_VARARGS, "Returns the lorcon internal version in the format YYYYMMRR(year-month-release #)."},
+  {"list_drivers", PyLorcon2_list_drivers, METH_VARARGS, "Returns a list with the supported drivers."},
+  {"find_driver",  PyLorcon2_find_driver,  METH_VARARGS, "Returns a tuple with the driver name and description. "},
+  {"auto_driver",  PyLorcon2_auto_driver,  METH_VARARGS, "Returns a tuple with the driver name and description."},
   {NULL, NULL, 0, NULL}
 };
 
@@ -150,12 +166,18 @@ static int PyLorcon2_Context_init(PyLorcon2_Context *self, PyObject *args, PyObj
   static char *kwlist[] = {"iface", NULL};
 
   if(!PyArg_ParseTupleAndKeywords(args, kwds, "S", kwlist, &iface))
+  {
+    PyErr_SetString(Lorcon2Exception, "Unable to parse arguments.");
     return -1;
+  }
 
   driver = lorcon_auto_driver(PyString_AsString(iface));
 
   if(driver == NULL)
+  {
+    PyErr_SetString(Lorcon2Exception, "Unable to get driver with auto_driver.");
     return -1;
+  }
 
   self->context = lorcon_create(PyString_AsString(iface), driver);
 
@@ -175,24 +197,36 @@ static int PyLorcon2_Context_init(PyLorcon2_Context *self, PyObject *args, PyObj
 static PyObject* PyLorcon2_Context_open_inject(PyLorcon2_Context *self)
 {
   if(lorcon_open_inject(self->context) < 0)
-    PyErr_SetString(Lorcon2Exception, "Unable to set injection mode.");
+  {
+    PyErr_SetString(Lorcon2Exception, "Unable to set context to inject mode.");
+    return NULL;
+  }
 
+  Py_INCREF(Py_None);
   return Py_None;
 }
 
 static PyObject* PyLorcon2_Context_open_monitor(PyLorcon2_Context *self)
 {
   if(lorcon_open_monitor(self->context) < 0)
-    PyErr_SetString(Lorcon2Exception, "Unable to set monitor mode.");
+  {
+    PyErr_SetString(Lorcon2Exception, "Unable to set context to monitor mode.");
+    return NULL;
+  }
 
+  Py_INCREF(Py_None);
   return Py_None;
 }
 
 static PyObject* PyLorcon2_Context_open_injmon(PyLorcon2_Context *self)
 {
   if(lorcon_open_injmon(self->context) < 0)
-    PyErr_SetString(Lorcon2Exception, "Unable to set injection and monitor mode.");
+  {
+    PyErr_SetString(Lorcon2Exception, "Unable to set context to monitor and inject mode.");
+    return NULL;
+  }
 
+  Py_INCREF(Py_None);
   return Py_None;
 }
 
@@ -212,24 +246,35 @@ static PyObject* PyLorcon2_Context_send_bytes(PyLorcon2_Context *self, PyObject 
   unsigned char *packet;
 
   if(!PyArg_ParseTuple(args, "s#", &packet, &len))
+  {
+    PyErr_SetString(Lorcon2Exception, "Unable to parse arguments.");
     return NULL;
+  }
 
   if(lorcon_send_bytes(self->context, len, packet) < 0)
+  {
+    PyErr_SetString(Lorcon2Exception, "Unable to send packet.");
     return NULL;
+  }
 
+  Py_INCREF(Py_None);
   return Py_None;
 }
 
 static PyObject* PyLorcon2_Context_set_timeout(PyLorcon2_Context *self, PyObject *args, PyObject *kwds)
 {
-  static char *kwlist[] = {"timeout", NULL};
   int timeout;
+  static char *kwlist[] = {"timeout", NULL};
 
   if(!PyArg_ParseTupleAndKeywords(args, kwds, "i", kwlist, &timeout))
+  {
+    PyErr_SetString(Lorcon2Exception, "Unable to parse arguments.");
     return NULL;
+  }
 
   lorcon_set_timeout(self->context, timeout);
 
+  Py_INCREF(Py_None);
   return Py_None;
 }
 
@@ -240,14 +285,18 @@ static PyObject* PyLorcon2_Context_get_timeout(PyLorcon2_Context *self)
 
 static PyObject* PyLorcon2_Context_set_vap(PyLorcon2_Context *self, PyObject *args, PyObject *kwds)
 {
-  static char *kwlist[] = {"vap", NULL};
   char *vap;
+  static char *kwlist[] = {"vap", NULL};
 
   if(!PyArg_ParseTupleAndKeywords(args, kwds, "z#", kwlist, &vap))
+  {
+    PyErr_SetString(Lorcon2Exception, "Unable to parse arguments.");
     return NULL;
+  }
 
   lorcon_set_vap(self->context, vap); 
 
+  Py_INCREF(Py_None);
   return Py_None;
 }
 
@@ -266,12 +315,15 @@ static PyObject* PyLorcon2_Context_set_channel(PyLorcon2_Context *self, PyObject
   int channel;
 
   if(!PyArg_ParseTuple(args, "i", &channel))
+  {
+    PyErr_SetString(Lorcon2Exception, "Unable to parse arguments.");
     return NULL;
+  }
 
   lorcon_set_channel(self->context, channel);
 
+  Py_INCREF(Py_None);
   return Py_None;
-
 }
 
 static PyObject* PyLorcon2_Context_get_channel(PyLorcon2_Context *self)
@@ -281,19 +333,19 @@ static PyObject* PyLorcon2_Context_get_channel(PyLorcon2_Context *self)
 
 static PyMethodDef PyLorcon2_Context_Methods[] =
 {
-  {"open_inject",   (PyCFunction)PyLorcon2_Context_open_inject,   METH_VARARGS, "TODO: Get Lorcon2 version."},
-  {"open_monitor",  (PyCFunction)PyLorcon2_Context_open_monitor,  METH_VARARGS, "TODO: Get Lorcon2 version."},
-  {"open_injmon",   (PyCFunction)PyLorcon2_Context_open_injmon,   METH_VARARGS, "TODO: Get Lorcon2 version."},
-  {"get_error",     (PyCFunction)PyLorcon2_Context_get_error,     METH_VARARGS, "TODO: Get Lorcon2 version."},
-  {"get_capiface",  (PyCFunction)PyLorcon2_Context_get_capiface,  METH_VARARGS, "TODO: Get Lorcon2 version."},
-  {"send_bytes",    (PyCFunction)PyLorcon2_Context_send_bytes,    METH_VARARGS, "TODO: Get Lorcon2 version."},
-  {"set_timeout",   (PyCFunction)PyLorcon2_Context_set_timeout,   METH_VARARGS, "TODO: Get Lorcon2 version."},
-  {"get_timeout",   (PyCFunction)PyLorcon2_Context_get_timeout,   METH_VARARGS, "TODO: Get Lorcon2 version."},
-  {"set_vap",       (PyCFunction)PyLorcon2_Context_set_vap,       METH_VARARGS, "TODO: Get Lorcon2 version."},
-  {"get_vap",       (PyCFunction)PyLorcon2_Context_get_vap,       METH_VARARGS, "TODO: Get Lorcon2 version."},
-  {"get_driver_name", (PyCFunction)PyLorcon2_Context_get_driver_name,       METH_VARARGS, "TODO: Get Lorcon2 version."},
-  {"set_channel",   (PyCFunction)PyLorcon2_Context_set_channel,   METH_VARARGS, "TODO: Get Lorcon2 version."},
-  {"get_channel",   (PyCFunction)PyLorcon2_Context_get_channel,   METH_VARARGS, "TODO: Get Lorcon2 version."},
+  {"open_inject",     (PyCFunction)PyLorcon2_Context_open_inject,     METH_VARARGS, "Set context to injection mode."},
+  {"open_monitor",    (PyCFunction)PyLorcon2_Context_open_monitor,    METH_VARARGS, "Set context to monitor mode."},
+  {"open_injmon",     (PyCFunction)PyLorcon2_Context_open_injmon,     METH_VARARGS, "Set context to monitor and injection mode."},
+  {"get_error",       (PyCFunction)PyLorcon2_Context_get_error,       METH_VARARGS, "Returns context error."},
+  {"get_capiface",    (PyCFunction)PyLorcon2_Context_get_capiface,    METH_VARARGS, "Returns context interface."},
+  {"send_bytes",      (PyCFunction)PyLorcon2_Context_send_bytes,      METH_VARARGS, "Send bytes."},
+  {"set_timeout",     (PyCFunction)PyLorcon2_Context_set_timeout,     METH_VARARGS, "Set context timeout."},
+  {"get_timeout",     (PyCFunction)PyLorcon2_Context_get_timeout,     METH_VARARGS, "Returns context timeout."},
+  {"set_vap",         (PyCFunction)PyLorcon2_Context_set_vap,         METH_VARARGS, "Set context vap."},
+  {"get_vap",         (PyCFunction)PyLorcon2_Context_get_vap,         METH_VARARGS, "Returns context vap."},
+  {"get_driver_name", (PyCFunction)PyLorcon2_Context_get_driver_name, METH_VARARGS, "Returns context driver name."},
+  {"set_channel",     (PyCFunction)PyLorcon2_Context_set_channel,     METH_VARARGS, "Set context channel."},
+  {"get_channel",     (PyCFunction)PyLorcon2_Context_get_channel,     METH_VARARGS, "Returns context channel."},
   {NULL, NULL, 0, NULL}
 };
 
@@ -346,11 +398,17 @@ PyMODINIT_FUNC initPyLorcon2(void)
   if(PyType_Ready(&PyLorcon2_ContextType) < 0)
     return;
 
-  m = Py_InitModule3("PyLorcon2", PyLorcon2Methods, "Lorco2 Python Wrapper Module.");
+  m = Py_InitModule3("PyLorcon2", PyLorcon2Methods, "Python Wrapper Module for Lorcon2 Library.");
 
   if(m == NULL)
     return;
 
+  // Lorcon2 Exception
+  Lorcon2Exception = PyErr_NewException("PyLorcon2.Lorcon2Exception", NULL, NULL);
+  Py_INCREF(Lorcon2Exception);
+  PyModule_AddObject(m, "Lorcon2Exception", Lorcon2Exception);
+
+  // Lorcon2 Context Object
   Py_INCREF(&PyLorcon2_ContextType);
   PyModule_AddObject(m, "Context", (PyObject *)&PyLorcon2_ContextType);
 }
