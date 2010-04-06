@@ -24,7 +24,7 @@ def simpleInjectionTest(iface, data):
   "Simple Lorcon2 Injection Test."
   c = PyLorcon2.Context(iface)
   c.open_injmon()
-  c.send_bytes(data)
+  c.send_bytes(data) == len(data)
 
 
 def simpleTimeoutTest(iface, timeout):
@@ -118,4 +118,4 @@ if __name__ == "__main__":
   
   print " * Get MAC: ", simpleGetMacTest(iface), " - ", ':'.join([ '%.2x' %n for n in simpleGetMacTest(iface)])
  
-  print " * Set MAC: ", simpleSetMacTest(iface, [0, 2, 114, 105, 40, 255])
+  print " * Set MAC: ", simpleSetMacTest(iface, (0, 2, 114, 105, 40, 255))
