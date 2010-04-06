@@ -1,121 +1,105 @@
 #!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+#
+#    This file is part of PyLorcon2.
+#
+#    PyLorcon2 is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    PyLorcon2 is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with PyLorcon2.  If not, see <http://www.gnu.org/licenses/>.
 
 import sys
+import unittest
+
 import PyLorcon2
 
-def functionTest(functionName, returnValue, paramList=None):
-  print " * %s" % functionName
-  print "  - [Parameters  ]: %s" % repr(paramList)
-  print "  - [Return Type ]: %s" % repr(type(returnValue))
-  print "  - [Return Value]: %s" % repr(returnValue)
+class PyLorcon2TestCase(unittest.TestCase):
+    iface = 'wlan0'
+    vap = iface
+    driver = 'mac80211'
+    # data is a beacon packet with bssid == 00:21:21:21:21:21
+    data = "\x80\x00\x00\x00\xff\xff\xff\xff\xff\xff\x00\x21\x21" \
+           "\x21\x21\x21\x00\x21\x21\x21\x21\x21\x90\x83\x50\x8c" \
+           "\xf4\x38\x23\x00\x00\x00\x64\x00\x11\x04\x00\x04XXXX" \
+           "\x01\x08\x82\x84\x8b\x96\x24\x30\x48\x6c\x03\x01\x01" \
+           "\x32\x04\x0c\x12\x18\x60"
+    timeout = 123
+    channel = 1
+    mac =  (0, 2, 114, 105, 40, 255)
 
-def testModuleMethods(iface, driver):
-  "Test PyLorcon2 module methods."
-  # lorcon_get_version
-  functionTest("get_version()", PyLorcon2.get_version())
-  # lorcon_list_drivers
-  functionTest("list_drivers()", PyLorcon2.list_drivers())
-  # lorcon_list_driver
-  functionTest("find_driver()", PyLorcon2.find_driver(driver), [driver])
-  # lorcon_auto_driver
-  functionTest("auto_driver()", PyLorcon2.auto_driver(iface), [iface])
+    def setUp(self):
+        self.ctx = PyLorcon2.Context(self.iface)
 
-def simpleInjectionTest(iface, data):
-  "Simple Lorcon2 Injection Test."
-  c = PyLorcon2.Context(iface)
-  c.open_injmon()
-  c.send_bytes(data) == len(data)
+    def tearDown(self):
+        self.ctx.close()
 
+    def testGetVersion(self):
+        version = PyLorcon2.get_version()
+        self.assertEqual(type(version), int)
 
-def simpleTimeoutTest(iface, timeout):
-  "Simple Set Timeout test"
-  c = PyLorcon2.Context(iface)
-  c.set_timeout(timeout) 
-  t = c.get_timeout()
+    def testListDrivers(self):
+        drivers = PyLorcon2.list_drivers()
+        self.assertEqual(type(drivers), list)
+        self.assertTrue(len(drivers) > 0)
 
-  return (t == timeout)
+    def testFindDriver(self):
+        driver, description = PyLorcon2.find_driver(self.driver)
+        self.assertEqual(self.driver, driver)
+        self.assertEqual(type(description), str)
 
-def simpleVapTest(iface, vap):
-  "Simple vap test"
-  c = PyLorcon2.Context(iface)
-  c.set_vap(vap) 
-  v = c.get_vap()
-  
-  return (v == vap)
+    def testAutoDriver(self):
+        # Is it wise to test this? May fail depending on where it is tested
+        # without a bug/error in Lorcon2 itself...
+        driver, description = PyLorcon2.auto_driver(self.iface)
+        self.assertEqual(self.driver, driver)
+        self.assertEqual(type(description), str)
+        
+    def testInjection(self):
+        self.ctx.open_injmon()
+        num_sent = self.ctx.send_bytes(self.data)
+        # The driver may or may not put a RadioTap-header in front of our
+        # packet, so num_sent may be larger than len(self.data). The two are
+        # equal if this is done in hardware.
+        self.assertTrue(num_sent >= len(self.data))
 
-def simpleGetDriverNameTest(iface):
-  "Test Driver name"
-  c = PyLorcon2.Context(iface)
-  drv = c.get_driver_name()
-  return drv
+    def testTimeout(self):
+        self.ctx.set_timeout(self.timeout)
+        timeout = self.ctx.get_timeout()
+        self.assertEqual(self.timeout, timeout)
 
-def simpleSetChannelTest(iface, channel):
-  "Set Channel Test"
-  c = PyLorcon2.Context(iface)
-  c.open_injmon()  
-  try:
-    c.set_channel(1)
-    chan = c. get_channel()
-    return (chan == channel)
-  except PyLorcon2.Lorcon2Exception as e:
-    print  e
+    def testVap(self):
+        self.ctx.set_vap(self.vap)
+        vap = self.ctx.get_vap()
+        self.assertEqual(self.vap, vap)
 
-
-def simpleGetMacTest(iface):
-  c = PyLorcon2.Context(iface)
-  c.open_injmon()  
-  mac = c.get_hwmac()
-  return  mac
-
-def simpleSetMacTest(iface, mac):
-  c = PyLorcon2.Context(iface)
-  c.open_monitor()  
-  try:
-    c.set_hwmac(mac)
-  except PyLorcon2.Lorcon2Exception as e:
-    print e 
+    def testGetDriverName(self):
+        drv = self.ctx.get_driver_name()
+        self.assertEqual(type(drv), str)
+    
+    def testChannel(self):
+        self.ctx.open_injmon()
+        self.ctx.set_channel(self.channel)
+        channel = self.ctx.get_channel()
+        self.assertEqual(self.channel, channel)
+    
+    def testMAC(self):
+        self.ctx.open_monitor()
+        self.ctx.set_hwmac(self.mac)
+        mac = self.ctx.get_hwmac()
+        self.assertEqual(self.mac, mac)
 
 if __name__ == "__main__":
-  if len(sys.argv) != 2:
-    print "Usage:"
-    print "\t%s <iface>" % sys.argv[0]
-    sys.exit(-1)
+    if len(sys.argv) == 2:
+        PyLorcon2TestCase.iface = sys.argv[1]
 
-  # Tests
-  iface  = sys.argv[1]
-  driver = "mac80211" # only testing mac80211 driver for now
-
-  # Test Module Methods
-  print "\n== Module Tests =="
-  testModuleMethods(iface, driver)
-
-  # data is a beacon packet with bssid == 00:21:21:21:21:21
-  data = "\x80\x00\x00\x00\xff\xff\xff\xff\xff\xff\x00\x21\x21" \
-         "\x21\x21\x21\x00\x21\x21\x21\x21\x21\x90\x83\x50\x8c" \
-         "\xf4\x38\x23\x00\x00\x00\x64\x00\x11\x04\x00\x04XXXX" \
-         "\x01\x08\x82\x84\x8b\x96\x24\x30\x48\x6c\x03\x01\x01" \
-         "\x32\x04\x0c\x12\x18\x60"
-
-  print "\n== Lorcon Context Tests =="
-  
- 
-  simpleInjectionTest(iface, data)
-  print " * Injection Test PASSED (sniff to check!)"
-
-  if simpleTimeoutTest(iface, 123):
-    print " * Timeout Test OK"
-  
-  if simpleVapTest(iface, "wlan0" ): 
-    print " * Vap Test OK"
-  
-  driver = simpleGetDriverNameTest(iface)
-  print " * Get Driver Name Test: %s" % driver
-
-  if not simpleSetChannelTest(iface, 1):
-    print " * Set Shannel Test FAILED"
-  else:
-    print " * Set Shannel Test OK"
-  
-  print " * Get MAC: ", simpleGetMacTest(iface), " - ", ':'.join([ '%.2x' %n for n in simpleGetMacTest(iface)])
- 
-  print " * Set MAC: ", simpleSetMacTest(iface, (0, 2, 114, 105, 40, 255))
+    loader = unittest.TestLoader()
+    suite = loader.loadTestsFromTestCase(PyLorcon2TestCase)
+    unittest.TextTestRunner(verbosity=2).run(suite)

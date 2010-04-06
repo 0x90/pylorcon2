@@ -448,18 +448,21 @@ PyDoc_STRVAR(PyLorcon2_Context_get_hwmac__doc__,
 static PyObject*
 PyLorcon2_Context_get_hwmac(PyLorcon2_Context *self)
 {
+    int r;
     uint8_t *mac;
     PyObject *ret;
 
-    if (lorcon_get_hwmac(self->context, &mac) < 0) {
+    r = lorcon_get_hwmac(self->context, &mac);
+    if (r < 0) {
         PyErr_SetString(Lorcon2Exception, lorcon_get_error(self->context));
+        ret = NULL;
+    } else if (r == 0) {
+        Py_INCREF(Py_None);
+        ret = Py_None;
+    } else {
+        ret = Py_BuildValue("(i,i,i,i,i,i)", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
         free(mac);
-        return NULL;
     }
-
-    ret = Py_BuildValue("(i,i,i,i,i,i)", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-    
-    free(mac);
 
     return ret;
 }
