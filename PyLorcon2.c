@@ -196,6 +196,7 @@ PyLorcon2_Context_init(PyLorcon2_Context *self, PyObject *args, PyObject *kwds)
         return -1;
     }
     
+    self->monitored = 0;
     lorcon_set_timeout(self->context, 100);
 
     return 0;
@@ -214,6 +215,8 @@ PyLorcon2_Context_open_inject(PyLorcon2_Context *self)
         return NULL;
     }
 
+    self->monitored = 1;
+
     Py_INCREF(Py_None);
     return Py_None;
 }
@@ -230,6 +233,8 @@ PyLorcon2_Context_open_monitor(PyLorcon2_Context *self)
         PyErr_SetString(Lorcon2Exception, lorcon_get_error(self->context));
         return NULL;
     }
+    
+    self->monitored = 1;
 
     Py_INCREF(Py_None);
     return Py_None;
@@ -247,6 +252,8 @@ PyLorcon2_Context_open_injmon(PyLorcon2_Context *self)
         PyErr_SetString(Lorcon2Exception, lorcon_get_error(self->context));
         return NULL;
     }
+    
+    self->monitored = 1;
 
     Py_INCREF(Py_None);
     return Py_None;
@@ -261,6 +268,8 @@ static PyObject*
 PyLorcon2_Context_close(PyLorcon2_Context *self)
 {
     lorcon_close(self->context);
+    
+    self->monitored = 0;
 
     Py_INCREF(Py_None);
     return Py_None;
@@ -302,6 +311,11 @@ PyLorcon2_Context_send_bytes(PyLorcon2_Context *self, PyObject *args, PyObject *
 
     if (!PyArg_ParseTuple(args, "O", &pckt))
         return NULL;
+    
+    if (!self->monitored) {
+        PyErr_SetString(PyExc_RuntimeError, "Context must be in monitor/injection-mode");
+        return NULL;
+    }
 
     pckt_string = PyObject_Str(pckt);
     if (!pckt_string) {
@@ -412,6 +426,11 @@ PyLorcon2_Context_set_channel(PyLorcon2_Context *self, PyObject *args, PyObject 
     if (!PyArg_ParseTuple(args, "i", &channel))
         return NULL;
 
+    if (!self->monitored) {
+        PyErr_SetString(PyExc_RuntimeError, "Context must be in monitor/injection-mode");
+        return NULL;
+    }
+
     if (lorcon_set_channel(self->context, channel) != 0) {
         PyErr_SetString(Lorcon2Exception, lorcon_get_error(self->context));
         return NULL;
@@ -430,6 +449,11 @@ static PyObject*
 PyLorcon2_Context_get_channel(PyLorcon2_Context *self)
 {
     int channel;
+
+    if (!self->monitored) {
+        PyErr_SetString(PyExc_RuntimeError, "Context must be in monitor/injection-mode");
+        return NULL;
+    }
 
     channel = lorcon_get_channel(self->context);
     if (channel < 0) {
@@ -451,6 +475,11 @@ PyLorcon2_Context_get_hwmac(PyLorcon2_Context *self)
     int r;
     uint8_t *mac;
     PyObject *ret;
+
+    if (!self->monitored) {
+        PyErr_SetString(PyExc_RuntimeError, "Context must be in monitor/injection-mode");
+        return NULL;
+    }
 
     r = lorcon_get_hwmac(self->context, &mac);
     if (r < 0) {
@@ -481,6 +510,11 @@ PyLorcon2_Context_set_hwmac(PyLorcon2_Context *self, PyObject *args, PyObject *k
 
     if (!PyArg_ParseTuple(args, "O!", &PyTuple_Type, &mac_tuple))
         return NULL;
+
+    if (!self->monitored) {
+        PyErr_SetString(PyExc_RuntimeError, "Context must be in monitor/injection-mode");
+        return NULL;
+    }
     
     if (PyTuple_Size(mac_tuple) != 6) {
         PyErr_SetString(PyExc_ValueError, "Parameter must be a tuple of 6 integers");

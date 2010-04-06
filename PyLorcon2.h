@@ -29,6 +29,7 @@ static PyObject *Lorcon2Exception;
 typedef struct {
   PyObject_HEAD
   struct lorcon *context;
+  char monitored;
 } PyLorcon2_Context;
 
 #endif /* __PYLORCON2__ */
