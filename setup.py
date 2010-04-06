@@ -23,7 +23,7 @@ PyLorcon2 = Extension('PyLorcon2',
                       libraries = ['orcon2'])
 
 setup(name = 'PyLorcon2',
-      version = '0.1',
+      version = '0.2',
       description = 'A wrapper for the Lorcon2 library',
       long_description = 'PyLorcon2 is a Python-wrapper for the Lorcon2 ' \
                          'library. Lorcon2 is a generic library for ' \
