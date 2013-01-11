@@ -18,7 +18,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
     Author: Andres Blanco (6e726d)     <6e726d@gmail.com>
-    Author: Ezequiel Gutesman (gutes)  <egutesman@coresecurity.com>
+    Author: Ezequiel Gutesman (gutes)  <egutesman@gmail.com>
 */
 
 #ifndef __PYLORCON2__

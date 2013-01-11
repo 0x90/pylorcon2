@@ -42,6 +42,6 @@ setup(name = 'PyLorcon2',
                'Topic :: Software Development :: Libraries'],
       platforms = ['any'],
       author = 'Andres Blanco (6e726d), Ezequiel Gutesman (gutes)',
-      author_email = '6e726d@gmail.com, egutesman@coresecurity.com',
+      author_email = '6e726d@gmail.com, egutesman@gmail.com',
       url = 'http://code.google.com/p/pylorcon2',
       ext_modules = [PyLorcon2])
