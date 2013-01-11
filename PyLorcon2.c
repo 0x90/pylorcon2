@@ -306,7 +306,7 @@ static PyObject*
 PyLorcon2_Context_send_bytes(PyLorcon2_Context *self, PyObject *args, PyObject *kwds)
 {
     char *pckt_buffer;
-    int pckt_size, sent;
+    ssize_t pckt_size, sent;
     PyObject *pckt, *pckt_string;
 
     if (!PyArg_ParseTuple(args, "O", &pckt))
@@ -529,7 +529,7 @@ PyLorcon2_Context_set_hwmac(PyLorcon2_Context *self, PyObject *args, PyObject *k
         }
     }
     
-    if (lorcon_set_hwmac(self->context, 6, mac) != 0) {
+    if (lorcon_set_hwmac(self->context, 6, mac) < 0) {
         PyErr_SetString(Lorcon2Exception, lorcon_get_error(self->context));
         return NULL;
     }
