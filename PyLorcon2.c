@@ -154,6 +154,19 @@ PyLorcon2_auto_driver(PyObject *self, PyObject *args)
     return retval;
 }
 
+PyDoc_STRVAR(PyLorcon2_lorcon_loop__doc__,
+	"lorcon_loop(lorcon_context, int, handler, u_char) -> int\n\n"
+	"Return pcap_loop ret val.");
+
+static int
+PyLorcon2_lorcon_loop(PyLorcon2_Context *context, PyObject *args) {
+	PyObject *ret;
+
+	if(context == NULL)
+		return -1;
+
+	return 1;
+}
 
 /*
     ###########################################################################
@@ -552,6 +565,7 @@ static PyMethodDef PyLorcon2Methods[] =
     {"list_drivers", PyLorcon2_list_drivers, METH_NOARGS,  PyLorcon2_list_drivers__doc__},
     {"find_driver",  PyLorcon2_find_driver,  METH_VARARGS, PyLorcon2_find_driver__doc__},
     {"auto_driver",  PyLorcon2_auto_driver,  METH_VARARGS, PyLorcon2_auto_driver__doc__},
+    {"lorcon_loop", PyLorcon2_lorcon_loop, METH_VARARGS, PyLorcon2_lorcon_loop__doc__},
     {NULL, NULL, 0, NULL}
 };
 
