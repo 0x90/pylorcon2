@@ -160,8 +160,6 @@ PyDoc_STRVAR(PyLorcon2_lorcon_loop__doc__,
 
 static int
 PyLorcon2_lorcon_loop(PyLorcon2_Context *context, PyObject *args) {
-	PyObject *ret;
-
 	if(context == NULL)
 		return -1;
 
@@ -536,7 +534,7 @@ PyLorcon2_Context_set_hwmac(PyLorcon2_Context *self, PyObject *args, PyObject *k
     
     for (i = 0; i < 6; i++) {
         mac[i] = (uint8_t)PyInt_AsLong(PyTuple_GetItem(mac_tuple, i));
-        if (mac[i] == -1) {
+        if (mac[i] == 0xFF) {
             PyErr_SetString(PyExc_ValueError, "Tuple-entry is not convertible to integer");
             return NULL;
         }
